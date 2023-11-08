@@ -26,6 +26,15 @@
       name: libapache2-mod-php
       state: latest
 
+- hosts: workstation
+  become: true
+  tasks:
+    
+    - name: install terraform
+      package:
+        name:
+          - terraform
+
 
 
 - hosts: web_servers
