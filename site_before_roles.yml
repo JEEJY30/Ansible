@@ -1,0 +1,110 @@
+---
+
+- hosts: all
+  become: true
+  pre_tasks:
+
+
+  - name: install updates
+    tags: always
+    package:
+      upgrade: dist
+      update_cache: yes
+    when: ansible_distribution == "Ubuntu"
+
+- hosts: all
+  become: true
+  tasks:
+    
+    - name: add shh key for simone
+      tags: always
+      authorized_key:
+        user: simone
+        key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIeCsdp0hEPuIxrqiww26QVUTFgA4PgBdXHHe8zpN3p6 Jeejy Ansible"
+   
+    - name: add sudoers file for simone
+      tags: always
+      copy: 
+        src: files/sudoer_simone
+        dest: /etc/sudoers.d/simone
+        owner: root
+        group: root
+        mode: 0440   
+
+    - name: create simone user
+      tags: always
+      user: 
+        name: simone
+        groups: root
+
+    - name: start apache(ubuntu)
+      tags: apache  
+      service:
+        name: apache2
+        state: started
+        enabled: yes
+      when: ansible_distribution == "Ubuntu"
+  
+  
+
+             
+
+    - name: install apache, php and uddate_cache
+      tags: always 
+      package:
+        name: 
+          - apache2
+          - libapache2-mod-php        
+        state: latest
+        update_cache: yes
+      when: ansible_distribution == "Ubuntu"
+    - name: add php support for apache
+      apt:
+        name: libapache2-mod-php
+        state: latest
+
+- hosts: workstation
+  become: true
+  tasks:
+    
+    - name: install terraform
+      package:
+        name:
+          - terraform
+
+
+
+- hosts: web_servers
+  become: true
+  tasks:
+   
+   - name: copy default html file for site
+     tags: apache,apache2
+     copy:
+       src: default_site.html
+       dest: /var/www/html/index.html
+       owner: root
+       group: root
+       mode: 0644
+   
+   - name: install apache, php and uddate_cache
+     tags: apache,apache2,ubuntu
+     package:
+       name:
+         - apache2
+         - libapache2-mod-php
+       state: latest
+       update_cache: yes
+     when: ansible_distribution == "Ubuntu" 
+
+
+- hosts: db_servers
+  become: true
+  tasks:
+   
+    - name: install mariadb package
+      tags: db,mariadb 
+      package:
+        name: mariadb-server
+        state: latest
+      when: ansible_distribution == "Ubuntu"
